@@ -1,0 +1,50 @@
+version: '3.9'
+
+services:
+  db:
+    container_name: mypostgres
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydatabase
+    #ports:
+      #- "5432:5432"
+    volumes:
+      - ./postgres/:/var/lib/postgresql/data
+      
+  flask_app:
+    container_name: flask-app
+    build:
+      target: flask
+    ports:
+      - "5001:5000"
+    depends_on:
+      - db
+    
+    command: >
+      sh -c "python migration_script.py && python app.py"
+      
+      
+  lab_app:
+    #build: ./lab_app
+    image: httpd:latest
+    ports:
+      - "8081:8080"
+    container_name: my-apache-app
+    volumes:
+      - ./lab_app/lab7/:/usr/local/apache2/htdocs
+      
+  nginx:
+    build:
+      context: .
+      target: final
+    container_name: docker-nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - flask_app
+      - lab_app
+      
+volumes:
+  postgres:
